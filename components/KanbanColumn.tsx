@@ -22,10 +22,16 @@ export function KanbanColumn({
     onDeleteTask,
     onAdd,
 }: KanbanColumnProps) {
-    const { setNodeRef } = useDroppable({ id });
+    const { setNodeRef, isOver } = useDroppable({ id });
 
     return (
-        <div className="flex-1 min-w-[320px] flex flex-col h-full rounded-2xl bg-slate-50/50 border border-slate-200/60 px-2 group/column">
+        <div
+            ref={setNodeRef}
+            className={`
+                flex-1 min-w-[320px] flex flex-col h-full rounded-2xl border px-2 group/column transition-colors duration-200
+                ${isOver ? 'bg-indigo-50/80 border-indigo-300 ring-4 ring-indigo-50' : 'bg-slate-50/50 border-slate-200/60'}
+            `}
+        >
             <div className="flex items-center justify-between p-4 mb-2">
                 <div className="flex items-center gap-3">
                     <h2 className="font-bold text-slate-700 text-base tracking-tight">{title}</h2>
@@ -47,7 +53,6 @@ export function KanbanColumn({
             </div>
 
             <div
-                ref={setNodeRef}
                 className="flex-1 overflow-y-auto px-1 pb-4 scrollbar-hide"
             >
                 <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>

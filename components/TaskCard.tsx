@@ -26,7 +26,6 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.3 : 1,
     };
 
     const badges = taskService.getBadges(task);
@@ -51,6 +50,16 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
 
     const daysLabel = getDaysLabel();
 
+    if (isDragging) {
+        return (
+            <div
+                ref={setNodeRef}
+                style={style}
+                className="bg-slate-50/50 border-2 border-dashed border-indigo-300/50 rounded-xl h-[120px] w-full"
+            />
+        );
+    }
+
     return (
         <div
             ref={setNodeRef}
@@ -61,6 +70,7 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         border border-transparent hover:border-indigo-100
         shadow-sm hover:shadow-md transition-all duration-200
         ${isOverdue ? 'ring-1 ring-red-100' : ''}
+        hover:-translate-y-1
       `}
             {...attributes}
             {...listeners}

@@ -3,14 +3,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Task, CreateTaskDTO, UpdateTaskDTO, TaskStatus } from '@/types';
 import { taskService } from '@/lib/services/TaskService';
+import { toast } from 'sonner';
 
 export function useTasks(userId: string | undefined) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Carregar tarefas
-    const loadTasks = useCallback(async () => {
+    const loadTasks = useCallback(async (silent: boolean = false) => {
         if (!userId) {
             setTasks([]);
             setLoading(false);
@@ -18,15 +18,17 @@ export function useTasks(userId: string | undefined) {
         }
 
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             setError(null);
             const allTasks = await taskService.getAllTasks(userId);
             setTasks(allTasks);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Erro ao carregar tarefas');
+            const msg = err instanceof Error ? err.message : 'Erro ao carregar tarefas';
+            setError(msg);
+            if (!silent) toast.error(msg);
             console.error('Error loading tasks:', err);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     }, [userId]);
 
@@ -41,10 +43,12 @@ export function useTasks(userId: string | undefined) {
         try {
             const newTask = await taskService.createTask(userId, data);
             setTasks((prev) => [...prev, newTask]);
+            toast.success('Tarefa criada com sucesso!');
             return newTask;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao criar tarefa';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw new Error(errorMessage);
         }
     };
@@ -58,10 +62,12 @@ export function useTasks(userId: string | undefined) {
             setTasks((prev) =>
                 prev.map((task) => (task.id === id ? updatedTask : task))
             );
+            toast.success('Tarefa atualizada!');
             return updatedTask;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar tarefa';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw new Error(errorMessage);
         }
     };
@@ -73,14 +79,15 @@ export function useTasks(userId: string | undefined) {
         try {
             await taskService.deleteTask(id, userId);
             setTasks((prev) => prev.filter((task) => task.id !== id));
+            toast.success('Tarefa excluída.');
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar tarefa';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw new Error(errorMessage);
         }
     };
 
-    // Mover tarefa para outro status (simples)
     const moveTask = async (id: string, newStatus: TaskStatus, newPosition: number) => {
         if (!userId) throw new Error('Usuário não autenticado');
 
@@ -93,6 +100,7 @@ export function useTasks(userId: string | undefined) {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao mover tarefa';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw new Error(errorMessage);
         }
     };
@@ -102,22 +110,23 @@ export function useTasks(userId: string | undefined) {
         return tasks.filter((task) => task.status === status);
     };
 
-    // Mover tarefa com reordenação completa (Batch Update)
     const moveTaskAndReorder = async (id: string, newStatus: TaskStatus, newOrderedIds: string[]) => {
         if (!userId) throw new Error('Usuário não autenticado');
 
-        // Optimistic Update Simples:
-        // Assumimos que vai dar certo e atualizamos
-        // Mas como a lógica de position é complexa, só atualizamos status e esperamos reload.
-        // Ou melhor, setamos loading=true silencioso (sem spinner total)
+        setTasks(prev => {
+            let newTasks = [...prev];
+            newTasks = newTasks.map(t => t.id === id ? { ...t, status: newStatus } : t);
+            return newTasks;
+        });
 
         try {
             await taskService.moveTaskAndReorder(userId, id, newStatus, newOrderedIds);
-            // Recarrega do servidor para ter as posições corretas
-            await loadTasks();
+            await loadTasks(true);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao mover tarefa';
             setError(errorMessage);
+            toast.error('Erro ao salvar a nova ordem!');
+            await loadTasks(false);
             throw new Error(errorMessage);
         }
     };

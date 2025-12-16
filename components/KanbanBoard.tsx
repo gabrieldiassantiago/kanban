@@ -70,7 +70,6 @@ export function KanbanBoard({
 
         const overId = over.id;
 
-        // Determinar status de destino
         let targetStatus: TaskStatus;
         let isContainer = false;
 
@@ -83,7 +82,6 @@ export function KanbanBoard({
             targetStatus = overTask.status;
         }
 
-        // Calcular nova ordem
         const tasksInTargetColumn = tasks.filter(t => t.status === targetStatus);
         const activeIndex = tasksInTargetColumn.findIndex(t => t.id === activeTaskId);
         const overIndex = isContainer
@@ -105,20 +103,19 @@ export function KanbanBoard({
             newOrderedTasks = newColumnTasks;
 
         } else {
-            // Mesma coluna: Reordenar
+
             if (activeIndex !== overIndex) {
                 newOrderedTasks = arrayMove(tasksInTargetColumn, activeIndex, overIndex);
             } else {
-                // Nenhuma mudança real
+
                 setActiveTask(null);
                 return;
             }
         }
 
-        // Extrair IDs
+
         const newOrderedIds = newOrderedTasks.map(t => t.id);
 
-        // Chamar handler
         await onTaskMove(activeTaskId, targetStatus, newOrderedIds);
 
         setActiveTask(null);
@@ -169,9 +166,12 @@ export function KanbanBoard({
                 />
             </div>
 
-            <DragOverlay>
+            <DragOverlay dropAnimation={{
+                duration: 250,
+                easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+            }}>
                 {activeTask ? (
-                    <div className="rotate-3 scale-105 cursor-grabbing">
+                    <div className="rotate-2 scale-105 cursor-grabbing shadow-2xl opacity-90 rounded-xl pointer-events-none">
                         <TaskCard
                             task={activeTask}
                             onEdit={() => { }}
