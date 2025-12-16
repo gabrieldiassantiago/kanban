@@ -96,7 +96,9 @@ export function useTasks(userId: string | undefined) {
             setTasks((prev) =>
                 prev.map((task) => (task.id === id ? movedTask : task))
             );
+            toast.success('Tarefa movida.');
             return movedTask;
+
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao mover tarefa';
             setError(errorMessage);
@@ -122,6 +124,7 @@ export function useTasks(userId: string | undefined) {
         try {
             await taskService.moveTaskAndReorder(userId, id, newStatus, newOrderedIds);
             await loadTasks(true);
+            toast.success('Tarefa movida.');
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao mover tarefa';
             setError(errorMessage);

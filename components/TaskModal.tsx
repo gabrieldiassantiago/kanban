@@ -129,8 +129,7 @@ export function TaskModal({ isOpen, onClose, onSave, task, initialStatus }: Task
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
                                             placeholder="O que precisa ser feito?"
-                                            className="w-full text-lg font-semibold placeholder:text-slate-300 border-none focus:ring-0 p-0 text-slate-800"
-                                            autoFocus
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 p-2 text-lg font-semibold placeholder:text-slate-300 border-none focus:ring-0 focus:outline-none p-0 text-slate-800"
                                         />
                                     </div>
 
@@ -152,10 +151,10 @@ export function TaskModal({ isOpen, onClose, onSave, task, initialStatus }: Task
                                                         type="button"
                                                         onClick={() => setStatus(option.value)}
                                                         className={clsx(
-                                                            "py-2 text-sm font-medium rounded-lg transition-all duration-200",
+                                                            "py-2 text-sm font-medium rounded-2xl transition-all duration-200",
                                                             status === option.value
-                                                                ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200"
-                                                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                                                                ? "bg-white text-indigo-600 rounded-2xl shadow-sm ring-1 ring-slate-200"
+                                                                : "text-slate-500 hover:text-slate-700 rounded-2xl hover:bg-slate-200/50"
                                                         )}
                                                     >
                                                         {option.label}
@@ -202,7 +201,7 @@ export function TaskModal({ isOpen, onClose, onSave, task, initialStatus }: Task
                                             onChange={(e) => setDescription(e.target.value)}
                                             rows={4}
                                             placeholder="Adicione mais detalhes sobre esta tarefa..."
-                                            className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-4 resize-none transition-all focus:bg-white"
+                                            className="w-full focus:outline-none bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl  block p-4 resize-none transition-all focus:bg-white"
                                         />
                                     </div>
 

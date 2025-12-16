@@ -42,6 +42,8 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
 
             if (diffDays < 0) return `${Math.abs(diffDays)} dias atraso`;
             if (diffDays === 0) return 'Hoje';
+            //se faltar poucas horas, mostrar em horas
+            if (diffDays <= 1) return `${Math.ceil(diffTime / (1000 * 60 * 60))} horas restantes`;
             return `${diffDays} dias restantes`;
         } catch {
             return null;
