@@ -21,7 +21,6 @@ export default function DashboardPage() {
         createTask,
         updateTask,
         deleteTask,
-        moveTask,
         moveTaskAndReorder
     } = useTasks(user?.id);
 
@@ -30,7 +29,6 @@ export default function DashboardPage() {
     const [initialStatus, setInitialStatus] = useState<TaskStatus | null>(null);
 
     useEffect(() => {
-        // Apenas redireciona se terminou de carregar E não está autenticado
         if (!authLoading && !isAuthenticated) {
             router.push('/login');
         }
