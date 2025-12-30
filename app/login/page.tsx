@@ -69,9 +69,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="relative z-10 flex items-center gap-3 mt-4">
-                    <div className="px-3 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-wider shadow-sm">
-                        Beta
-                    </div>
+
                     <span className="text-sm text-slate-400 font-medium">v1.0</span>
                 </div>
             </motion.div>

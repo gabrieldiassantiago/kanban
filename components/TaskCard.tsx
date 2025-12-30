@@ -1,11 +1,14 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Task } from '@/types';
 import { Badge } from './Badge';
 import { taskService } from '@/lib/services/TaskService';
-import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Clock, Trash2 } from 'lucide-react';
+import { parseISO } from 'date-fns';
+import { Clock, Trash2, CheckSquare } from 'lucide-react';
+import { clsx } from 'clsx';
 
 interface TaskCardProps {
     task: Task;
@@ -22,6 +25,11 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         transition,
         isDragging,
     } = useSortable({ id: task.id });
+
+    // Steps stat (using data from task if available)
+    const steps = task.task_steps || [];
+    const totalSteps = steps.length;
+    const completedSteps = steps.filter(s => s.is_completed).length;
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -110,13 +118,28 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
 
             {/* Footer apenas com Data Real */}
             {daysLabel && (
-                <div className="flex items-center justify-start pt-2 border-t border-slate-50 mt-2">
+                <div className="flex items-center justify-start pt-2 border-t border-slate-50 mt-2 gap-3">
                     <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md ${isOverdue ? 'text-red-500 bg-red-50' : 'text-slate-500 bg-slate-100'}`}>
                         <Clock size={12} />
                         <span>{daysLabel}</span>
                     </div>
                 </div>
             )}
+
+            {/* Steps Progress (Exibir se houver steps) */}
+            {totalSteps > 0 && (
+                <div className={`flex items-center justify-start ${!daysLabel ? 'pt-2 border-t border-slate-50 mt-2' : 'pt-0 mt-0'} `}>
+                    <div className={clsx(
+                        "flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md",
+                        completedSteps === totalSteps ? "text-green-600 bg-green-50" : "text-slate-500 bg-slate-100"
+                    )}>
+                        <CheckSquare size={12} />
+                        <span>{completedSteps}/{totalSteps}</span>
+                    </div>
+                </div>
+            )}
+
+            {!daysLabel && !totalSteps && <div className="h-2"></div>}
         </div>
     );
 }

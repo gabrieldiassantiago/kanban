@@ -66,7 +66,10 @@ export function KanbanBoard({
 
         const activeTaskId = active.id as string;
         const activeTask = tasks.find((t) => t.id === activeTaskId);
-        if (!activeTask) return;
+        if (!activeTask) {
+            setActiveTask(null);
+            return;
+        }
 
         const overId = over.id;
 
@@ -78,7 +81,10 @@ export function KanbanBoard({
             isContainer = true;
         } else {
             const overTask = tasks.find(t => t.id === overId);
-            if (!overTask) return;
+            if (!overTask) {
+                setActiveTask(null);
+                return;
+            }
             targetStatus = overTask.status;
         }
 
@@ -116,9 +122,15 @@ export function KanbanBoard({
 
         const newOrderedIds = newOrderedTasks.map(t => t.id);
 
-        await onTaskMove(activeTaskId, targetStatus, newOrderedIds);
-
-        setActiveTask(null);
+        try {
+            await onTaskMove(activeTaskId, targetStatus, newOrderedIds);
+        } catch (error) {
+            console.error('Error moving task:', error);
+            // Task state will be refreshed by the parent component
+        } finally {
+            // ALWAYS reset activeTask to prevent UI freeze
+            setActiveTask(null);
+        }
     };
 
     const handleDragCancel = () => {

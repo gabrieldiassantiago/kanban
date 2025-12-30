@@ -1,4 +1,4 @@
-import { Task, CreateTaskDTO, UpdateTaskDTO, TaskStatus } from '@/types';
+import { Task, CreateTaskDTO, UpdateTaskDTO, TaskStatus, TaskStep, CreateTaskStepDTO, UpdateTaskStepDTO } from '@/types';
 
 export interface ITaskRepository {
     findAll(userId: string): Promise<Task[]>;
@@ -10,4 +10,10 @@ export interface ITaskRepository {
     updatePosition(id: string, userId: string, newPosition: number): Promise<void>;
     updateStatus(id: string, userId: string, newStatus: TaskStatus): Promise<Task>;
     updatePositionsBatch(userId: string, updates: { id: string; position: number }[]): Promise<void>;
+    deleteAllTasks(userId: string): Promise<void>;
+
+    getSteps(taskId: string): Promise<TaskStep[]>;
+    createStep(data: CreateTaskStepDTO): Promise<TaskStep>;
+    updateStep(id: string, data: UpdateTaskStepDTO): Promise<TaskStep>;
+    deleteStep(id: string): Promise<void>;
 }

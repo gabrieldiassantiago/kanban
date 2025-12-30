@@ -16,6 +16,7 @@ export interface Profile {
     email: string;
     full_name?: string;
     avatar_url?: string;
+    code_is_kanban?: string;
     created_at: string;
     updated_at: string;
 }
@@ -31,6 +32,7 @@ export interface Task {
     position: number;
     created_at: string;
     updated_at: string;
+    task_steps?: TaskStep[];
 }
 
 export interface CreateTaskDTO {
@@ -60,3 +62,52 @@ export type TaskBadge =
     | 'urgente'     // Tarefa com prioridade URGENT
     | 'alta'        // Tarefa com prioridade HIGH
     | 'agendado';   // Tarefa com horário futuro
+
+export interface TaskStep {
+    id: string;
+    task_id: string;
+    title: string;
+    is_completed: boolean;
+    position: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CreateTaskStepDTO {
+    task_id: string;
+    title: string;
+    position?: number;
+}
+
+export interface UpdateTaskStepDTO {
+    title?: string;
+    is_completed?: boolean;
+    position?: number;
+}
+
+// Notification Types
+export enum NotificationType {
+    TASK_ASSIGNED = 'TASK_ASSIGNED',
+    TASK_COMPLETED = 'TASK_COMPLETED',
+    TASK_OVERDUE = 'TASK_OVERDUE',
+    SYSTEM = 'SYSTEM',
+}
+
+export interface Notification {
+    id: string;
+    user_id: string;
+    title: string;
+    message?: string;
+    type: NotificationType;
+    is_read: boolean;
+    link?: string;
+    created_at: string;
+}
+
+export interface CreateNotificationDTO {
+    user_id: string;
+    title: string;
+    message?: string;
+    type?: NotificationType;
+    link?: string;
+}

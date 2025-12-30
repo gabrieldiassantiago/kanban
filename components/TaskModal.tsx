@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Task, TaskPriority, TaskStatus } from '@/types';
+import { Task, TaskPriority, TaskStatus, TaskStep } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, AlignLeft, Tag, Activity } from 'lucide-react';
+import { X, Calendar, AlignLeft, Tag, Activity, ListTodo, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import { clsx } from 'clsx';
+import { taskService } from '@/lib/services/TaskService';
 
 interface TaskModalProps {
     isOpen: boolean;
@@ -22,6 +23,11 @@ export function TaskModal({ isOpen, onClose, onSave, task, initialStatus }: Task
     const [scheduledTime, setScheduledTime] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // Steps State
+    const [steps, setSteps] = useState<TaskStep[]>([]);
+    const [newStepTitle, setNewStepTitle] = useState('');
+    const [isAddingStep, setIsAddingStep] = useState(false);
+
     useEffect(() => {
         if (isOpen) {
             if (task) {
@@ -29,6 +35,10 @@ export function TaskModal({ isOpen, onClose, onSave, task, initialStatus }: Task
                 setDescription(task.description || '');
                 setPriority(task.priority);
                 setStatus(task.status);
+
+                // Fetch steps
+                taskService.getSteps(task.id).then(setSteps).catch(console.error);
+
                 if (task.scheduled_time) {
                     try {
                         const date = new Date(task.scheduled_time);
@@ -55,9 +65,58 @@ export function TaskModal({ isOpen, onClose, onSave, task, initialStatus }: Task
                 // Usa o status inicial se fornecido (clique no + da coluna), senão usa TODO
                 setStatus(initialStatus || TaskStatus.TODO);
                 setScheduledTime('');
+                setSteps([]);
             }
         }
     }, [task, isOpen, initialStatus]);
+
+    const handleAddStep = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newStepTitle.trim() || !task) return;
+
+        try {
+            const newStep = await taskService.createStep({
+                task_id: task.id,
+                title: newStepTitle.trim(),
+                position: steps.length
+            });
+            setSteps([...steps, newStep]);
+            setNewStepTitle('');
+        } catch (error) {
+            console.error('Error adding step:', error);
+            alert('Erro ao adicionar etapa');
+        }
+    };
+
+    const handleToggleStep = async (step: TaskStep) => {
+        try {
+            // Optimistic update
+            const updatedSteps = steps.map(s =>
+                s.id === step.id ? { ...s, is_completed: !s.is_completed } : s
+            );
+            setSteps(updatedSteps);
+
+            await taskService.updateStep(step.id, {
+                is_completed: !step.is_completed
+            });
+        } catch (error) {
+            console.error('Error updating step:', error);
+            // Revert on error
+            taskService.getSteps(task!.id).then(setSteps);
+        }
+    };
+
+    const handleDeleteStep = async (stepId: string) => {
+        try {
+            // Optimistic update
+            setSteps(steps.filter(s => s.id !== stepId));
+            await taskService.deleteStep(stepId);
+        } catch (error) {
+            console.error('Error deleting step:', error);
+            // Revert
+            taskService.getSteps(task!.id).then(setSteps);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,9 +134,10 @@ export function TaskModal({ isOpen, onClose, onSave, task, initialStatus }: Task
             await onSave(taskData);
             onClose();
         } catch (error) {
-            console.error(error);
-            alert('Erro ao salvar');
+            console.error('Error saving task:', error);
+            alert('Erro ao salvar tarefa. Tente novamente.');
         } finally {
+            // ALWAYS reset loading state, even on error
             setIsLoading(false);
         }
     };
@@ -204,6 +264,103 @@ export function TaskModal({ isOpen, onClose, onSave, task, initialStatus }: Task
                                             className="w-full focus:outline-none bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl  block p-4 resize-none transition-all focus:bg-white"
                                         />
                                     </div>
+
+                                    {/* Etapas / Checklist (Apenas se a tarefa já existir) */}
+                                    {task && (
+                                        <div className="space-y-3">
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                <ListTodo size={12} /> Etapas
+                                                <span className="text-slate-300 text-[10px] font-normal ml-auto">
+                                                    {steps.filter(s => s.is_completed).length}/{steps.length}
+                                                </span>
+                                            </label>
+
+                                            <div className="space-y-2">
+                                                {/* Lista de Steps */}
+                                                <div className="space-y-1">
+                                                    {steps.map((step) => (
+                                                        <div key={step.id} className="group flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-colors">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleToggleStep(step)}
+                                                                className={clsx(
+                                                                    "flex-shrink-0 transition-colors",
+                                                                    step.is_completed ? "text-green-500" : "text-slate-300 hover:text-slate-400"
+                                                                )}
+                                                            >
+                                                                {step.is_completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                                                            </button>
+                                                            <span className={clsx(
+                                                                "flex-grow text-sm transition-all",
+                                                                step.is_completed ? "text-slate-400 line-through" : "text-slate-700"
+                                                            )}>
+                                                                {step.title}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteStep(step.id)}
+                                                                className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Adicionar Step */}
+                                                <div className="mt-2">
+                                                    {isAddingStep ? (
+                                                        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                                                            <input
+                                                                type="text"
+                                                                value={newStepTitle}
+                                                                onChange={(e) => setNewStepTitle(e.target.value)}
+                                                                placeholder="Nova etapa..."
+                                                                className="flex-grow bg-transparent text-sm focus:outline-none placeholder:text-slate-400"
+                                                                autoFocus
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        e.preventDefault();
+                                                                        handleAddStep(e);
+                                                                    } else if (e.key === 'Escape') {
+                                                                        setIsAddingStep(false);
+                                                                        setNewStepTitle('');
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleAddStep}
+                                                                disabled={!newStepTitle.trim()}
+                                                                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded disabled:opacity-50"
+                                                            >
+                                                                <Plus size={18} />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setIsAddingStep(false);
+                                                                    setNewStepTitle('');
+                                                                }}
+                                                                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded"
+                                                            >
+                                                                <X size={18} />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsAddingStep(true)}
+                                                            className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium px-2 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors w-full"
+                                                        >
+                                                            <Plus size={16} />
+                                                            Adicionar etapa
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Data */}
                                     <div className="space-y-3">

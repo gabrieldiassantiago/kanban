@@ -1,7 +1,8 @@
-import { Task, CreateTaskDTO, UpdateTaskDTO, TaskStatus, TaskBadge } from '@/types';
+import { Task, CreateTaskDTO, UpdateTaskDTO, TaskStatus, TaskBadge, TaskStep, CreateTaskStepDTO, UpdateTaskStepDTO, NotificationType } from '@/types';
 import { ITaskRepository } from '../repositories/ITaskRepository';
 import { taskRepository } from '../repositories/SupabaseTaskRepository';
 import { isPast, isFuture, parseISO } from 'date-fns';
+import { notificationService } from './NotificationService';
 
 export class TaskService {
     constructor(private repository: ITaskRepository) { }
@@ -45,6 +46,14 @@ export class TaskService {
             data.position = tasks.length;
         }
 
+        await notificationService.createNotification({
+            user_id: userId,
+            title: 'Tarefa atualizada',
+            message: `A tarefa ${data.title} foi atualizada.`,
+            type: NotificationType.TASK_ASSIGNED
+
+        });
+
         return this.repository.create(userId, data);
     }
 
@@ -62,10 +71,19 @@ export class TaskService {
             throw new Error('O título da tarefa não pode estar vazio');
         }
 
+        await notificationService.createNotification({
+            user_id: userId,
+            title: 'Tarefa atualizada',
+            message: `A tarefa ${existingTask.title} foi atualizada.`,
+            type: NotificationType.TASK_ASSIGNED
+
+        });
+
+
         return this.repository.update(id, userId, data);
     }
 
-    /**
+    /** 
      * Deleta uma tarefa
      */
     async deleteTask(id: string, userId: string): Promise<void> {
@@ -124,6 +142,10 @@ export class TaskService {
         }));
 
         await this.repository.updatePositionsBatch(userId, updates);
+    }
+
+    async deleteAllTasks(userId: string) {
+
     }
 
     /**
@@ -191,6 +213,27 @@ export class TaskService {
             return false;
         }
     }
+
+    // Steps
+    async getSteps(taskId: string): Promise<TaskStep[]> {
+        return this.repository.getSteps(taskId);
+    }
+
+    async createStep(data: CreateTaskStepDTO): Promise<TaskStep> {
+        if (!data.title || data.title.trim() === '') {
+            throw new Error('O título da etapa é obrigatório');
+        }
+        return this.repository.createStep(data);
+    }
+
+    async updateStep(id: string, data: UpdateTaskStepDTO): Promise<TaskStep> {
+        return this.repository.updateStep(id, data);
+    }
+
+    async deleteStep(id: string): Promise<void> {
+        return this.repository.deleteStep(id);
+    }
+
 }
 
 export const taskService = new TaskService(taskRepository);

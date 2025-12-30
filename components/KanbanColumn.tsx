@@ -36,7 +36,7 @@ export function KanbanColumn({
                 <div className="flex items-center gap-3">
                     <h2 className="font-bold text-slate-700 text-base tracking-tight">{title}</h2>
                     <div className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                        {tasks.length}
+                        {tasks.length} tarefas
                     </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover/column:opacity-100 transition-opacity">

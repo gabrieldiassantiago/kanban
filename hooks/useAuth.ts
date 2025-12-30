@@ -11,8 +11,10 @@ export function useAuth() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        authService.getSession()
-            .then(async (session) => {
+        // Função para carregar a sessão inicial
+        const loadSession = async () => {
+            try {
+                const session = await authService.getSession();
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
@@ -23,23 +25,31 @@ export function useAuth() {
                         console.error('Error fetching profile', e);
                     }
                 }
-            })
-            .catch((err) => {
+            } catch (err) {
                 console.error('Auth check failed', err);
                 setUser(null);
-            })
-            .finally(() => {
+                setProfile(null);
+            } finally {
                 setLoading(false);
-            });
+            }
+        };
+
+        loadSession();
 
         // Escuta mudanças de autenticação
         const { data: { subscription } } = authService.onAuthStateChange(
             async (event, session) => {
+                console.log('Auth state changed:', event);
+
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
-                    const userProfile = await authService.getProfile(session.user.id);
-                    setProfile(userProfile);
+                    try {
+                        const userProfile = await authService.getProfile(session.user.id);
+                        setProfile(userProfile);
+                    } catch (e) {
+                        console.error('Error fetching profile on auth change', e);
+                    }
                 } else {
                     setProfile(null);
                 }

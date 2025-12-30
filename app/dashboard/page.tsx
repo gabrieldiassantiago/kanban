@@ -9,12 +9,12 @@ import { TaskModal } from '@/components/TaskModal';
 import { AppShell } from '@/components/layout/AppShell';
 import { Task, TaskStatus } from '@/types';
 import { authService } from '@/lib/services/AuthService';
-
 import { KanbanSkeleton } from '@/components/KanbanSkeleton';
+
 
 export default function DashboardPage() {
     const router = useRouter();
-    const { user, loading: authLoading, isAuthenticated } = useAuth();
+    const { user, profile, loading: authLoading, isAuthenticated } = useAuth();
     const {
         tasks,
         loading: tasksLoading,
@@ -23,6 +23,7 @@ export default function DashboardPage() {
         deleteTask,
         moveTaskAndReorder
     } = useTasks(user?.id);
+
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -62,25 +63,48 @@ export default function DashboardPage() {
     };
 
     const handleSaveTask = async (taskData: any) => {
-        if (editingTask) {
-            await updateTask(editingTask.id, taskData);
-        } else {
-            await createTask(taskData);
+        try {
+            if (editingTask) {
+                await updateTask(editingTask.id, taskData);
+            } else {
+                await createTask(taskData);
+            }
+        } catch (error: any) {
+            throw error;
         }
     };
 
+    // Log user apenas quando mudar (debug)
+    useEffect(() => {
+        if (user) {
+            console.log(user);
+        } else {
+            console.log('⚠️ No user');
+        }
+    }, [user]);
+
     // Estado de busca local
     const [searchTerm, setSearchTerm] = useState('');
+    const [filters, setFilters] = useState({ status: 'Todos', priority: 'Todas' });
 
     const handleMoveTask = async (taskId: string, newStatus: any, newOrderedIds: string[]) => {
         await moveTaskAndReorder(taskId, newStatus, newOrderedIds);
     };
 
     // Filtragem local
-    const filteredTasks = tasks.filter(task =>
-        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredTasks = tasks.filter(task => {
+        // Busca por texto
+        const matchSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        // Filtro por Status
+        const matchStatus = filters.status === 'Todos' || task.status === filters.status;
+
+        // Filtro por Prioridade
+        const matchPriority = filters.priority === 'Todas' || task.priority === filters.priority;
+
+        return matchSearch && matchStatus && matchPriority;
+    });
 
     // Combina os estados de loading
     const isPageLoading = authLoading || (isAuthenticated && tasksLoading);
@@ -95,6 +119,10 @@ export default function DashboardPage() {
             user={user}
             onSearch={setSearchTerm}
             onNewTask={handleCreateTask}
+            onFilterChange={setFilters}
+            profile={profile}
+            tasks={tasks}
+            onSelectTask={handleEditTask}
         >
             <div className="h-full flex flex-col">
                 {/* Conteúdo Principal com Loading State */}
