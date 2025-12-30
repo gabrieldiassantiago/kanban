@@ -23,9 +23,6 @@ export class ProfileService {
         return profileRepository.getProfile(userId);
     }
 
-    async generateCodeIsKanban(userId: string): Promise<string> {
-        return profileRepository.generateCodeIsKanban(userId);
-    }
 }
 
 // Exporta instância já com o repositório injetado
